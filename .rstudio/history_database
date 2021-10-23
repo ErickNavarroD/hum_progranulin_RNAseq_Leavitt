@@ -1,0 +1,4 @@
+1634949741581:getwd()
+1634949751133:dir.create("data")
+1634949755392:dir.create("code")
+1634949760525:dir.create("outputs")
