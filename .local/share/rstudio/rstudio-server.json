@@ -1,4 +1,9 @@
 {
     "context_id": "9170F6B7",
-    "document_outline_width": 183
+    "document_outline_width": 183,
+    "theme": {
+        "name": "Merbivore",
+        "url": "theme/default/merbivore.rstheme",
+        "isDark": true
+    }
 }

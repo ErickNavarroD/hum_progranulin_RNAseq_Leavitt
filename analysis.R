@@ -1,3 +1,7 @@
+# Loadpackages ----
+library(tidyverse)
+library(DESeq2)
+
 # Load helper functions ----
 source("code/utils.R")
 
@@ -14,14 +18,99 @@ if (!file.exists(counts_data_path)) {
   
 }
 
-## read counts and metadata ----
-counts_data_path <- read.table(
-  counts_data_path, header = TRUE, sep = "\t"
-)
+## read data ----
 
+### metadata ----
 metadata <- read.table(
   "data/metadata.tsv", header = FALSE,
   col.names = c("sample_id")
+) %>% 
+  mutate(
+    condition = str_remove_all(sample_id, '\\d+'),
+    condition = factor(
+      condition,
+      levels = c(
+        'WT', 'GhKO', 'Het'
+      )
+    )
+  ) %>% 
+  column_to_rownames("sample_id")
+
+### counts data ----
+counts_data <- read.table(
+  counts_data_path, header = TRUE, sep = "\t"
+) %>% 
+  dplyr::select("gene_id", all_of(rownames(metadata))) %>% 
+  column_to_rownames("gene_id")
+
+### make sure they match ----
+stopifnot(
+  all.equal(colnames(counts_data), rownames(metadata))
 )
 
 # DE analysis ----
+
+## fit models ----
+
+if (!file.exists("data/deseq2.rds")) {
+  dds <- DESeqDataSetFromMatrix(countData = counts_data,
+                                colData = metadata,
+                                design = ~ condition) %>% 
+    DESeq(betaPrior = TRUE)
+  saveRDS(dds, "data/deseq2.rds")
+} else {
+  dds <- readRDS("data/deseq2.rds")
+}
+
+
+
+
+## retrieve results ----
+
+comparisons <- list(
+  ghko_vs_wt = c("condition", "GhKO", "WT"),  # GhKO / WT
+  het_vs_wt = c("condition", "Het", "WT"),
+  het_vs_ghko = c("condition", "Het", "GhKO")
+)
+
+all_results <- imap_dfr(
+  comparisons, 
+  function(.comparison, .comparison_name) {
+    
+    res <- results(dds, contrast = .comparison, tidy = TRUE) %>% 
+      rename(gene_id := row) %>% 
+      dplyr::filter(!is.na(padj)) %>% 
+      mutate(comparison = .comparison_name) %>% 
+      arrange(padj, -abs(log2FoldChange), -baseMean)
+    
+    
+    output_dir <- str_glue("output/diff_expression_tables/{.comparison_name}")
+    make_dir(output_dir)
+    
+    # write all results for this comparison 
+    # (except for genes with NA in padj column)
+    write_tsv(
+      res,
+      str_glue("{output_dir}/{.comparison_name}_all_genes.tsv")
+    )
+    
+    # write significant calls
+    write_tsv(
+      res %>% filter(padj < 0.05),
+      str_glue("{output_dir}/{.comparison_name}_significant_genes.tsv")
+    )
+    
+    # write top ~5% calls
+    # might be greater than 5% if there are ties in padj
+    write_tsv(
+      res %>% 
+        filter(padj < 0.05) %>% 
+        slice_min(padj, prop = .05),
+      str_glue("{output_dir}/{.comparison_name}_top5_genes.tsv")
+    )
+    
+    return(res)
+  }
+  
+)
+

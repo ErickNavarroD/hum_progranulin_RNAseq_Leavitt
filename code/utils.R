@@ -25,3 +25,9 @@ merge_counts_data <- function(
     row.names = FALSE
   )
 }
+
+make_dir <- function(.path) {
+  if (!dir.exists(.path)) {
+    dir.create(.path, recursive = T)
+  }
+}

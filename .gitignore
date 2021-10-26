@@ -3,3 +3,4 @@ connection*txt
 *rstudio_server*
 .local/*
 .rstudio/*
+.config/*
