@@ -106,3 +106,11 @@
 1635273974767:counts_data_path, header = TRUE, sep = "\t"
 1635273974769:)
 1635273977579:counts_data_path
+1635274362342:read.table(
+1635274362345:"data/metadata.tsv", header = FALSE,
+1635274362347:col.names = c("R1")
+1635274362348:)
+1635274367283:head(read.table(
+1635274367285:"data/metadata.tsv", header = FALSE,
+1635274367287:col.names = c("R1")
+1635274367288:))

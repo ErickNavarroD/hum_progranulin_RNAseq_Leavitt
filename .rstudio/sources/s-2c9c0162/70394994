@@ -11,15 +11,17 @@
     "relative_order": 1,
     "properties": {
         "tempName": "Untitled1",
-        "cursorPosition": "20,0",
-        "scrollLine": "7"
+        "cursorPosition": "26,4",
+        "scrollLine": "14",
+        "docOutlineVisible": "1",
+        "docOutlineSize": "183"
     },
     "folds": "",
-    "lastKnownWriteTime": 1635274027,
+    "lastKnownWriteTime": 1635274512,
     "encoding": "",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1635274027128,
+    "last_content_update": 1635274512673,
     "read_only": false,
     "read_only_alternatives": []
 }
