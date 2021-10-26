@@ -1,0 +1,13 @@
+/scratch/st-kdkortha-1/nshen7/leavitt_collab/data/illumina/WT4_RNA_for_seq/counts/WT4_RNA_for_seq.counts.genes
+/scratch/st-kdkortha-1/nshen7/leavitt_collab/data/illumina/WT1_RNA_for_seq/counts/WT1_RNA_for_seq.counts.genes
+/scratch/st-kdkortha-1/nshen7/leavitt_collab/data/illumina/Het2_RNA_for_seq/counts/Het2_RNA_for_seq.counts.genes
+/scratch/st-kdkortha-1/nshen7/leavitt_collab/data/illumina/Het1_RNA_for_seq/counts/Het1_RNA_for_seq.counts.genes
+/scratch/st-kdkortha-1/nshen7/leavitt_collab/data/illumina/Het3_RNA_for_seq/counts/Het3_RNA_for_seq.counts.genes
+/scratch/st-kdkortha-1/nshen7/leavitt_collab/data/illumina/GhKO2_RNA_for_seq/counts/GhKO2_RNA_for_seq.counts.genes
+/scratch/st-kdkortha-1/nshen7/leavitt_collab/data/illumina/WT2_RNA_for_seq/counts/WT2_RNA_for_seq.counts.genes
+/scratch/st-kdkortha-1/nshen7/leavitt_collab/data/illumina/GhKO3_RNA_for_seq/counts/GhKO3_RNA_for_seq.counts.genes
+/scratch/st-kdkortha-1/nshen7/leavitt_collab/data/illumina/WT3_RNA_for_seq/counts/WT3_RNA_for_seq.counts.genes
+/scratch/st-kdkortha-1/nshen7/leavitt_collab/data/illumina/WT5_RNA_for_seq/counts/WT5_RNA_for_seq.counts.genes
+/scratch/st-kdkortha-1/nshen7/leavitt_collab/data/illumina/GhKO4_RNA_for_seq/counts/GhKO4_RNA_for_seq.counts.genes
+/scratch/st-kdkortha-1/nshen7/leavitt_collab/data/illumina/Het4_RNA_for_seq/counts/Het4_RNA_for_seq.counts.genes
+/scratch/st-kdkortha-1/nshen7/leavitt_collab/data/illumina/GhKO1_RNA_for_seq/counts/GhKO1_RNA_for_seq.counts.genes

@@ -2,3 +2,107 @@
 1634949751133:dir.create("data")
 1634949755392:dir.create("code")
 1634949760525:dir.create("outputs")
+1635272757182:library(tidyverse)
+1635272762921:install.packages('tidyverse')
+1635272882493:library(tidyverse)
+1635272890599:library(dplyr)
+1635272936714:.libPaths()
+1635272982130:library(dplyr, lib.loc = '/usr/lib/x86_64-linux-gnu')
+1635273055667:readLines("data/filepaths.txt")
+1635273064522:filepath_list <- readLines("data/filepaths.txt")
+1635273080921:sapply(filepath_list, function(.path) print(.path))
+1635273096655:sapply(filepath_list, function(.path) c("a", .path))
+1635273108480:lapply(filepath_list, function(.path) c("a", .path))
+1635273127865:filepath_vector = filepath_list
+1635273172754:df_list <-lapply(filepath_vector[1:2], function(filepath) {
+1635273172755:read.table(filepath)
+1635273172757:})
+1635273175716:df_list
+1635273178345:df_list[[1]]
+1635273181507:head(df_list[[1]])
+1635273184768:head(df_list[[2]])
+1635273250009:options()['stringsAreFactors']
+1635273253603:options()['stringsAsFactors']
+1635273354184:Reduce(function(x,y) merge(x = x, y = y, by = "V1"), df_list[2])
+1635273358618:head(Reduce(function(x,y) merge(x = x, y = y, by = "V1"), df_list[2]))
+1635273420043:filepath_vector[1]
+1635273446401:strsplit(filepath_vector[1], "RNA")
+1635273455824:strsplit(filepath_vector[1], "/")
+1635273479594:strsplit(filepath_vector[1], "/")[[1]][8]
+1635273527547:filepath <- filepath_vector[1]
+1635273530697:(.sample <- strsplit(filepath, "/")[[1]][8])
+1635273536129:strsplit(.sample, "_")[[1]][1]
+1635273551354:df_list <-lapply(filepath_vector, function(filepath) {
+1635273551356:.df <- read.table(filepath)
+1635273551357:.sample <- strsplit(filepath, "/")[[1]][8]
+1635273551359:.sample <- strsplit(.sample, "_")[[1]][1]
+1635273551361:names(.df)[2] <- .sample
+1635273551362:return(.df)
+1635273551364:})
+1635273556129:head(Reduce(function(x,y) merge(x = x, y = y, by = "V1"), df_list[2]))
+1635273561705:head(Reduce(function(x,y) merge(x = x, y = y, by = "V1"), df_list[1:2]))
+1635273571569:head(Reduce(function(x,y) merge(x = x, y = y, by = "V1"), df_list[1:3]))
+1635273577355:head(Reduce(function(x,y) merge(x = x, y = y, by = "V1"), df_list))
+1635273615795:head(df_list[[2]])
+1635273618977:head(df_list[[3]])
+1635273621524:head(df_list[[4]])
+1635273624460:head(df_list[[5]])
+1635273626531:head(df_list[[6]])
+1635273628784:head(df_list[[7]])
+1635273630816:head(df_list[[8]])
+1635273633137:head(df_list[[9]])
+1635273635475:head(df_list[[10]])
+1635273639329:head(df_list[[111]])
+1635273640832:head(df_list[[11]])
+1635273642993:head(df_list[[12]])
+1635273644930:head(df_list[[13]])
+1635273647633:head(df_list[[14]])
+1635273817998:# Load helper functions ----
+1635273818000:source("code/utils.R")
+1635273873071:counts_data_path <- "data/counts.tsv"
+1635273874684:if (!file.exists(counts_data_path)) {
+1635273874686:merge_counts_data(
+1635273874688:filepath_file = "data/filepaths.txt",
+1635273874689:output_path = counts_data_path
+1635273874691:)
+1635273874694:}
+1635273963891:merge_counts_data <- function(
+1635273963893:filepath_file,
+1635273963894:output_path
+1635273963896:) {
+1635273963898:filepath_vector <- readLines(filepath_file)
+1635273963899:df_list <-lapply(filepath_vector, function(filepath) {
+1635273963901:.df <- read.table(filepath)
+1635273963902:colnames(.df)[1] <- "gene_id"
+1635273963904:.sample <- strsplit(filepath, "/")[[1]][8]
+1635273963906:.sample <- strsplit(.sample, "_")[[1]][1]
+1635273963907:colnames(.df)[2] <- .sample
+1635273963909:return(.df)
+1635273963911:})
+1635273963913:counts_data <- Reduce(
+1635273963915:function(x,y) merge(x = x, y = y, by = "gene_id"),
+1635273963917:df_list
+1635273963918:)
+1635273963921:write.table(
+1635273963923:counts_data,
+1635273963924:output_path,
+1635273963926:quote = FALSE,
+1635273963927:sep = "\t",
+1635273963929:row.names = FALSE
+1635273963931:)
+1635273963932:}
+1635273968243:merge_counts_data(
+1635273968245:filepath_file = "data/filepaths.txt",
+1635273968247:output_path = counts_data_path
+1635273968248:)
+1635273972493:counts_data_path <- "data/counts.tsv"
+1635273972964:if (!file.exists(counts_data_path)) {
+1635273972966:merge_counts_data(
+1635273972967:filepath_file = "data/filepaths.txt",
+1635273972969:output_path = counts_data_path
+1635273972971:)
+1635273972974:}
+1635273974764:counts_data_path <- read.table(
+1635273974767:counts_data_path, header = TRUE, sep = "\t"
+1635273974769:)
+1635273977579:counts_data_path
