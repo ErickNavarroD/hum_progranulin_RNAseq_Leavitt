@@ -30,7 +30,7 @@ metadata <- read.table(
     condition = factor(
       condition,
       levels = c(
-        'WT', 'GhKO', 'Het'
+        'WT', 'Het', 'GhKO'
       )
     )
   ) %>% 
@@ -51,15 +51,15 @@ stopifnot(
 # DE analysis ----
 
 ## fit models ----
-
-if (!file.exists("data/deseq2.rds")) {
+make_dir("tmp")
+if (!file.exists("tmp/deseq2.rds")) {
   dds <- DESeqDataSetFromMatrix(countData = counts_data,
                                 colData = metadata,
                                 design = ~ condition) %>% 
     DESeq(betaPrior = TRUE)
-  saveRDS(dds, "data/deseq2.rds")
+  saveRDS(dds, "tmp/deseq2.rds")
 } else {
-  dds <- readRDS("data/deseq2.rds")
+  dds <- readRDS("tmp/deseq2.rds")
 }
 
 
@@ -68,9 +68,9 @@ if (!file.exists("data/deseq2.rds")) {
 ## retrieve results ----
 
 comparisons <- list(
-  ghko_vs_wt = c("condition", "GhKO", "WT"),  # GhKO / WT
-  het_vs_wt = c("condition", "Het", "WT"),
-  het_vs_ghko = c("condition", "Het", "GhKO")
+  het_vs_wt = c("condition", "Het", "WT"),  # log2FC is log2(Het/WT)
+  ghko_vs_wt = c("condition", "GhKO", "WT"),
+  ghko_vs_het = c("condition", "GhKO", "Het")
 )
 
 all_results <- imap_dfr(
@@ -78,7 +78,7 @@ all_results <- imap_dfr(
   function(.comparison, .comparison_name) {
     
     res <- results(dds, contrast = .comparison, tidy = TRUE) %>% 
-      rename(gene_id := row) %>% 
+      dplyr::rename(gene_id := row) %>% 
       dplyr::filter(!is.na(padj)) %>% 
       mutate(comparison = .comparison_name) %>% 
       arrange(padj, -abs(log2FoldChange), -baseMean)
@@ -114,3 +114,14 @@ all_results <- imap_dfr(
   
 )
 
+## look at Grn gene ----
+
+data.frame(
+  y = counts(dds, normalized=T)["Grn",],
+  x = dds$condition
+) %>% 
+  ggplot(aes(x, y)) +
+  ggbeeswarm::geom_quasirandom(width = .2) +
+  ylim(0, 1500) +
+  labs(x = NULL, y = "Normalized Counts",
+       title = "Grn")
