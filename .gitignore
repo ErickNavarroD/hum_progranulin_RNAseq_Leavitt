@@ -4,4 +4,4 @@ connection*txt
 .local/*
 .rstudio/*
 .config/*
-.Rproj.user
+*.Rproj
