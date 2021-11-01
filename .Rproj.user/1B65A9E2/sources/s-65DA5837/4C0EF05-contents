@@ -1,0 +1,7 @@
+connection*txt
+*pbs
+*rstudio_server*
+.local/*
+.rstudio/*
+.config/*
+*.Rproj

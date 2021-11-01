@@ -5,10 +5,6 @@ library(here)
 library(ggrepel)
 library(EnhancedVolcano)
 library(pheatmap)
-library(ggvenn)
-#if (!require(devtools)) install.packages("devtools")
-#devtools::install_github("yanlinlin82/ggvenn")
-
 # Load helper functions ----
 source("code/utils.R")
 
@@ -200,7 +196,7 @@ pheatmap(norm_counts, scale = "row",
          annotation_colors = list(condition = c(WT = "#999999", Het = "#E69F00", GhKO = "#56B4E9")))
 dev.off() 
 
-## Plot the Venn diagram ----
+## Plot the Ven diagram ----
 
 #Plot the Number of DE genes
 jpeg(file = here("output", "figures","DE_genes_numbers.jpeg"))
@@ -217,19 +213,3 @@ all_results %>%
   scale_x_discrete("") #Remove x axis title
 dev.off()  
   
-
-#Plot the Venn diagram
-venn_info <- list(
-  Het = all_results %>% 
-    filter(padj < 0.05,
-           comparison == "het_vs_wt") %>% 
-    pull(gene_id),
-  GhKO = all_results %>% 
-    filter(padj < 0.05,
-           comparison == "ghko_vs_wt") %>% 
-    pull(gene_id)
-)
-
-jpeg(file = here("output", "figures", "Venn_Het_GhKO.jpeg"))
-ggvenn(venn_info,stroke_size = 0.5)
-dev.off()

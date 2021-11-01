@@ -1,0 +1,3 @@
+mtcars_tbl <- rownames_to_column(mtcars, var = "car") %>% as_tibble()
+mtcars_tbl
+column_to_rownames(mtcars_tbl, var = "car") %>% head()
