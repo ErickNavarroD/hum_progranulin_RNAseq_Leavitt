@@ -128,18 +128,19 @@ all_results <- imap_dfr(
 make_dir(here("output", "figures"))
 
 vsd = vst(object = dds, blind = TRUE)
-jpeg(file = here("output", "figures", "PCA.jpeg"))
 plotPCA(vsd, intgroup = c("condition")) + 
   theme_classic()+
   scale_colour_manual(values= c("#999999", "#E69F00", "#56B4E9"))+
   geom_text_repel(aes(label = row.names(metadata)))
-dev.off()
+ggsave(
+  here("output", "figures", "PCA.jpeg"),
+  width = 6.5, height = 4, dpi = 300
+)
 
 ## Volcano plots
 
 for (contrast in names(comparisons)){
-  jpeg(file = here("output","figures",paste(contrast,"_VolcPlot.jpeg",sep = "")))
-  print(all_results %>% 
+  volc_plot <- all_results %>% 
     filter(comparison == contrast) %>% 
     EnhancedVolcano(lab = .[,1],
                     x = "log2FoldChange", 
@@ -150,17 +151,20 @@ for (contrast in names(comparisons)){
                     legendLabels=c('NS', 
                                    "log2FC",
                                    'p adj',
-                                   "p adj & log2FC"))+
-    ylab(expression(-log[10]~p~adj))) 
-    dev.off()
+                                   "p adj & log2FC")) +
+    ylab(expression(-log[10]~p~adj))
+  
+  ggsave(
+    here("output","figures",paste(contrast,"_VolcPlot.jpeg",sep = "")),
+    volc_plot, width = 7.5, height = 6.5, dpi = 300
+  )
 }
 
-  
+
 
 
 ## look at the expression of the Grn gene ----
 
-jpeg(file = here("output","figures","Grn_expression.jpeg"))
 data.frame(
   y = counts(dds, normalized=T)["Grn",],
   x = dds$condition
@@ -172,7 +176,10 @@ data.frame(
        title = "Grn") +
   theme_classic()+
   ggtitle("Grn expression")
-dev.off()
+ggsave(
+  here("output","figures","Grn_expression.jpeg"),
+  width = 6.5, height = 4, dpi = 300
+)
 
 ## Heatmaps ----
 
@@ -188,7 +195,8 @@ norm_counts =
       unique())) %>% column_to_rownames(var = "rowname")
 
 #Plot the heatmap
-jpeg(file = here("output", "figures", "heatmap_clustered.jpeg"))
+jpeg(file = here("output", "figures", "heatmap_clustered.jpeg"),
+     res = 300, width = 1600, height = 1800)
 pheatmap(norm_counts, scale = "row",
          cluster_cols = F,
          main = "DE genes in any comparison (1382)", #Poner el titulo
@@ -203,7 +211,6 @@ dev.off()
 ## Plot the Venn diagram ----
 
 #Plot the Number of DE genes
-jpeg(file = here("output", "figures","DE_genes_numbers.jpeg"))
 all_results %>% 
   filter(padj < 0.05) %>% 
   mutate(Change = case_when(log2FoldChange > 0 ~ "Overexpressed" ,
@@ -215,8 +222,11 @@ all_results %>%
   ylab("Number of genes")+
   ggtitle("DE genes per comparison")+
   scale_x_discrete("") #Remove x axis title
-dev.off()  
-  
+ggsave(
+  here("output", "figures","DE_genes_numbers.jpeg"),
+  width = 6, height = 4, dpi = 300
+)
+
 
 #Plot the Venn diagram
 venn_info <- list(
@@ -230,6 +240,8 @@ venn_info <- list(
     pull(gene_id)
 )
 
-jpeg(file = here("output", "figures", "Venn_Het_GhKO.jpeg"))
 ggvenn(venn_info,stroke_size = 0.5)
-dev.off()
+ggsave(
+  here("output", "figures", "Venn_Het_GhKO.jpeg"),
+  width = 8.5, height = 6.5, dpi = 300
+)
