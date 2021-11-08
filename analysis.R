@@ -8,7 +8,8 @@ library(pheatmap)
 library(ggvenn)
 #if (!require(devtools)) install.packages("devtools")
 #devtools::install_github("yanlinlin82/ggvenn")
-
+library(clusterProfiler)
+library(org.Mm.eg.db)
 # Load helper functions ----
 source("code/utils.R")
 
@@ -233,3 +234,46 @@ venn_info <- list(
 jpeg(file = here("output", "figures", "Venn_Het_GhKO.jpeg"))
 ggvenn(venn_info,stroke_size = 0.5)
 dev.off()
+
+## Enrichment analysis ----
+universo = unique(all_results$gene_id)
+number_enriched_terms = tibble()
+for (contrast in names(comparisons)){
+  
+  subset_comp = all_results %>% 
+    filter(comparison ==contrast,
+           padj < 0.05)
+  
+  enrich_GO_res = enrichGO(gene = as.character(na.omit(subset_comp$gene_id)),
+                     keyType = "SYMBOL",
+                     OrgDb = 'org.Mm.eg.db',
+                     ont="BP", pvalueCutoff=0.05,qvalueCutoff = 0.5,
+                     universe = as.character(na.omit(universo)),
+                     readable = F)
+  
+  jpeg(file = here("output","figures",paste(contrast,"_GObp_dotplot.jpeg",sep = "")))
+  print(
+    clusterProfiler::dotplot(enrich_GO_res, showCategory = 25, title = contrast )
+  ) 
+  dev.off()
+  
+  enriched_terms = enrich_GO_res@result %>% 
+    filter(p.adjust < 0.05) %>% 
+    nrow()
+  
+  number_enriched_terms = c(number_enriched_terms, enriched_terms )
+}
+
+jpeg(file = here("output", "figures", "Number_enriched_terms.jpeg"))
+number_enriched_terms %>% 
+  as.tibble() %>% 
+  rename(enriched_terms = value) %>% 
+  mutate(contrast = names(comparisons)) %>% 
+  ggplot(aes(x = contrast, y = enriched_terms))+
+  geom_col(aes(fill = contrast), alpha = 0.5)+
+  theme_classic()+
+  ylab("Enriched terms")+
+  guides(fill = "none") +
+  scale_x_discrete("")
+dev.off()  
+
