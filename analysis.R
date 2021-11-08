@@ -189,7 +189,7 @@ norm_counts =
       unique())) %>% column_to_rownames(var = "rowname")
 
 #Plot the heatmap
-jpeg(file = here("output", "figures", "heatmap_clustered.jpeg"))
+jpeg(file = here("output", "figures", "heatmap_unclustered.jpeg"))
 pheatmap(norm_counts, scale = "row",
          cluster_cols = F,
          main = "DE genes in any comparison (1382)", #Poner el titulo
