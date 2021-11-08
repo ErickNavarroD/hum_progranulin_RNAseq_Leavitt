@@ -277,3 +277,81 @@ number_enriched_terms %>%
   scale_x_discrete("")
 dev.off()  
 
+## Het + GhKO vs WT ----
+dds_genotype <- DESeqDataSetFromMatrix(countData = counts_data,
+                              colData = metadata,
+                              design = ~ genotype) %>% 
+  DESeq(betaPrior = TRUE)
+
+res_genotype = results(dds_genotype, tidy = TRUE) %>% 
+  dplyr::rename(gene_id := row) %>% 
+  dplyr::filter(!is.na(padj)) %>% 
+  arrange(padj, -abs(log2FoldChange), -baseMean)
+
+res_gen_signif = res %>% 
+  filter(padj < 0.05)
+
+## Volcano plot ----
+jpeg(file = here("output","figures","mixed_genotypes_volcanoplot.jpeg"))
+res_genotype %>% 
+  EnhancedVolcano(lab = .[,1],
+                  x = "log2FoldChange", 
+                  FCcutoff = 0, 
+                  y = "padj",
+                  title = contrast,
+                  subtitleLabSize = 0.1,
+                  legendLabels=c('NS', 
+                                 "log2FC",
+                                 'p adj',
+                                 "p adj & log2FC"))+
+  ylab(expression(-log[10]~p~adj)) 
+dev.off()
+
+#Barplot of number of DE genes
+jpeg(file = here("output","figures","mixed_genotypes_numberDEgenes.jpeg"))
+res_genotype %>% 
+  filter(padj < 0.05) %>% 
+  mutate(Change = case_when(log2FoldChange > 0 ~ "Overexpressed" ,
+                            log2FoldChange < 0 ~ "Underexpressed"),
+         comparison = "het+GhKO_vs_WT") %>% 
+  ggplot(aes(x = comparison, fill = Change)) +
+  geom_bar()+
+  geom_text(stat = "count", aes(label = after_stat(count)), vjust = 0)+
+  theme_classic()+
+  ylab("Number of genes")+
+  ggtitle("DE genes")+
+  scale_x_discrete("") #Remove x axis title
+dev.off()
+
+#Comparison with a Venn diagram with previous results
+jpeg(file = here("output","figures","mixed_genotypes_Venn.jpeg"))
+venn_info <- list(
+  Het = all_results %>% 
+    filter(padj < 0.05,
+           comparison == "het_vs_wt") %>% 
+    pull(gene_id),
+  GhKO = all_results %>% 
+    filter(padj < 0.05,
+           comparison == "ghko_vs_wt") %>% 
+    pull(gene_id),
+  GhKO_Het = res_genotype %>% 
+    filter(padj < 0.05) %>% 
+    pull(gene_id)
+)
+ggvenn(venn_info,stroke_size = 0.5)
+dev.off()
+
+## GO enrichment analysis
+universo_genotype = unique(res_genotype$gene_id)
+
+enrich_GO_res_genotype = enrichGO(gene = as.character(na.omit(res_gen_signif$gene_id)),
+                         keyType = "SYMBOL",
+                         OrgDb = 'org.Mm.eg.db',
+                         ont="BP", pvalueCutoff=0.05,qvalueCutoff = 0.5,
+                         universe = as.character(na.omit(universo_genotype)),
+                         readable = F)
+
+jpeg(file = here("output","figures","mixed_genotypes_GOenrich.jpeg"))
+clusterProfiler::dotplot(enrich_GO_res, showCategory = 25, title = contrast ) 
+dev.off()
+#No enriched terms were found. 
