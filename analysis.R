@@ -291,6 +291,31 @@ res_genotype = results(dds_genotype, tidy = TRUE) %>%
 res_gen_signif = res %>% 
   filter(padj < 0.05)
 
+## Write the results ----
+output_dir <- str_glue("output/diff_expression_tables/ghkoHet_vs_wt")
+make_dir(output_dir)
+# write all results for this comparison 
+# (except for genes with NA in padj column)
+write_tsv(
+  res_genotype,
+  str_glue("{output_dir}/ghkoHet_vs_wt_all_genes.tsv")
+)
+
+# write significant calls
+write_tsv(
+  res_genotype %>% filter(padj < 0.05),
+  str_glue("{output_dir}/ghkoHet_vs_wt_significant_genes.tsv")
+)
+
+# write top ~5% calls
+# might be greater than 5% if there are ties in padj
+write_tsv(
+  res_genotype %>% 
+    filter(padj < 0.05) %>% 
+    slice_min(padj, prop = .05),
+  str_glue("{output_dir}/ghkoHet_vs_wt_top5_genes.tsv")
+)
+
 ## Volcano plot ----
 jpeg(file = here("output","figures","mixed_genotypes_volcanoplot.jpeg"))
 res_genotype %>% 
