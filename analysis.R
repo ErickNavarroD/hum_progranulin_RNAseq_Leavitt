@@ -323,7 +323,7 @@ res_genotype %>%
                   x = "log2FoldChange", 
                   FCcutoff = 0, 
                   y = "padj",
-                  title = contrast,
+                  title = "GhKO + Het vs WT",
                   subtitleLabSize = 0.1,
                   legendLabels=c('NS', 
                                  "log2FC",
