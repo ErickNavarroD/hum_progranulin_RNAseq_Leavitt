@@ -259,11 +259,11 @@ for (contrast in names(comparisons)){
            padj < 0.05)
   
   enrich_GO_res = enrichGO(gene = as.character(na.omit(subset_comp$gene_id)),
-                     keyType = "SYMBOL",
-                     OrgDb = 'org.Mm.eg.db',
-                     ont="BP", pvalueCutoff=0.05,qvalueCutoff = 0.5,
-                     universe = as.character(na.omit(universo)),
-                     readable = F)
+                           keyType = "SYMBOL",
+                           OrgDb = 'org.Mm.eg.db',
+                           ont="BP", pvalueCutoff=0.05,qvalueCutoff = 0.5,
+                           universe = as.character(na.omit(universo)),
+                           readable = F)
   
   jpeg(file = here("output","figures",paste(contrast,"_GObp_dotplot.jpeg",sep = "")))
   print(
@@ -293,8 +293,8 @@ dev.off()
 
 ## Het + GhKO vs WT ----
 dds_genotype <- DESeqDataSetFromMatrix(countData = counts_data,
-                              colData = metadata,
-                              design = ~ genotype) %>% 
+                                       colData = metadata,
+                                       design = ~ genotype) %>% 
   DESeq(betaPrior = TRUE)
 
 res_genotype = results(dds_genotype, tidy = TRUE) %>% 
@@ -384,14 +384,114 @@ dev.off()
 universo_genotype = unique(res_genotype$gene_id)
 
 enrich_GO_res_genotype = enrichGO(gene = as.character(na.omit(res_gen_signif$gene_id)),
-                         keyType = "SYMBOL",
-                         OrgDb = 'org.Mm.eg.db',
-                         ont="BP", pvalueCutoff=0.05,qvalueCutoff = 0.5,
-                         universe = as.character(na.omit(universo_genotype)),
-                         readable = F)
+                                  keyType = "SYMBOL",
+                                  OrgDb = 'org.Mm.eg.db',
+                                  ont="BP", pvalueCutoff=0.05,qvalueCutoff = 0.5,
+                                  universe = as.character(na.omit(universo_genotype)),
+                                  readable = F)
 
 jpeg(file = here("output","figures","mixed_genotypes_GOenrich.jpeg"))
 clusterProfiler::dotplot(enrich_GO_res, showCategory = 25, title = contrast ) 
 dev.off()
 #No enriched terms were found. 
+
+# Check outliers ----
+
+## normalized ----
+jpeg("output/figures/sample_distributions_normalized.jpeg",
+     res = 300, width = 1600, height = 1200)
+counts(dds, normalized = TRUE) %>% 
+  (\(x) log(x+1)) %>% 
+  boxplot(las=2, ylab = "log[reads+1]", main = "Normalized")
+dev.off()
+
+## unnormalized ----
+jpeg("output/figures/sample_distributions_unnormalized.jpeg",
+     res = 300, width = 1600, height = 1200)
+counts(dds, normalized = FALSE) %>% 
+  (\(x) log(x+1)) %>% 
+  boxplot(las=2, ylab = "log[reads+1]", main = "Not normalized")
+dev.off()
+
+# GSEA ----
+
+## feature 1: numeric vector
+
+for (contrast in names(comparisons)) {
+  print(str_glue("Running GASEA for {contrast}"))
+  res <- all_results %>% 
+    filter(comparison == contrast) %>% 
+    arrange(-log2FoldChange)
+  geneList = res$log2FoldChange
+  names(geneList) = as.character(res$gene_id)
+  gsea_res <- gseGO(geneList = geneList,
+                    OrgDb = org.Mm.eg.db,
+                    ont = "ALL",
+                    keyType = "SYMBOL",
+                    minGSSize = 10,
+                    eps = 1e-16,
+                    maxGSSize = 500,
+                    pvalueCutoff = 0.05,
+                    verbose = FALSE)
+  
+  outdir <- str_glue("output/figures/gsea/{contrast}")
+  make_dir(outdir)
+  gsea_result_arranged <- gsea_res@result %>% 
+    dplyr::filter(abs(enrichmentScore) > 0.5) %>% 
+    arrange(p.adjust)
+  write_tsv(gsea_result_arranged, 
+            str_glue("{outdir}/{contrast}_gsea_stats.tsv"))
+  
+  n_sets <- 20
+  .p <- dotplot(
+    gsea_res, 
+    showCategory = min(n_sets, nrow(gsea_result_arranged)),
+    font.size = 9
+  )
+  ggsave(
+    str_glue("{outdir}/{contrast}_gsea_dotplot_top{n_sets}_gene_ratio.jpeg"),
+    .p, width = 9, height = 9
+  )
+
+  .p <- plot_gsea(gsea_result_arranged, N = n_sets)
+  ggsave(
+    str_glue("{outdir}/{contrast}_gsea_dotplot_top{n_sets}_enrich_score.jpeg"),
+    .p, width = 12, height = 7
+  )
+  sets_to_plot <- gsea_result_arranged %>% 
+    head(n_sets) %>% 
+    pull(ID)
+  
+  top_sets_dir <- str_glue("{outdir}/top{n_sets}")
+  make_dir(top_sets_dir)
+  print(str_glue("Saving set plots"))
+  for (set_id in sets_to_plot) {
+    set_description <- gsea_result_arranged %>% 
+      dplyr::filter(ID == set_id) %>% 
+      pull(Description)
+    .p <- gseaplot(gsea_res, 
+                   geneSetID = set_id, 
+                   title = str_to_title(set_description),
+                   plot = FALSE) &
+      theme(plot.title = element_text(size = 8))
+    # .p <- .p & labs(
+    #   title = paste0("\n", str_to_title(set_description))
+    # )
+    
+    file_name <- paste0(
+      str_remove(set_id, ":"), "_",
+      str_replace_all(set_description, " |\\/", "-"),
+      ".jpeg"
+    )
+    ggsave(
+      str_glue("{top_sets_dir}/{file_name}"),
+      .p, width = 8, height = 7.5
+    )
+  }
+}
+
+
+
+
+
 
