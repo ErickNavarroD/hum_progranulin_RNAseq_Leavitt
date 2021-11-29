@@ -129,19 +129,18 @@ all_results <- imap_dfr(
 make_dir(here("output", "figures"))
 
 vsd = vst(object = dds, blind = TRUE)
+jpeg(file = here("output", "figures", "PCA.jpeg"))
 plotPCA(vsd, intgroup = c("condition")) + 
   theme_classic()+
   scale_colour_manual(values= c("#999999", "#E69F00", "#56B4E9"))+
   geom_text_repel(aes(label = row.names(metadata)))
-ggsave(
-  here("output", "figures", "PCA.jpeg"),
-  width = 6.5, height = 4, dpi = 300
-)
+dev.off()
 
 ## Volcano plots
 
 for (contrast in names(comparisons)){
-  volc_plot <- all_results %>% 
+  jpeg(file = here("output","figures",paste(contrast,"_VolcPlot.jpeg",sep = "")))
+  print(all_results %>% 
     filter(comparison == contrast) %>% 
     EnhancedVolcano(lab = .[,1],
                     x = "log2FoldChange", 
@@ -152,20 +151,17 @@ for (contrast in names(comparisons)){
                     legendLabels=c('NS', 
                                    "log2FC",
                                    'p adj',
-                                   "p adj & log2FC")) +
-    ylab(expression(-log[10]~p~adj))
-  
-  ggsave(
-    here("output","figures",paste(contrast,"_VolcPlot.jpeg",sep = "")),
-    volc_plot, width = 7.5, height = 6.5, dpi = 300
-  )
+                                   "p adj & log2FC"))+
+    ylab(expression(-log[10]~p~adj))) 
+    dev.off()
 }
 
-
+  
 
 
 ## look at the expression of the Grn gene ----
 
+jpeg(file = here("output","figures","Grn_expression.jpeg"))
 data.frame(
   y = counts(dds, normalized=T)["Grn",],
   x = dds$condition
@@ -177,10 +173,7 @@ data.frame(
        title = "Grn") +
   theme_classic()+
   ggtitle("Grn expression")
-ggsave(
-  here("output","figures","Grn_expression.jpeg"),
-  width = 6.5, height = 4, dpi = 300
-)
+dev.off()
 
 ## Heatmaps ----
 
@@ -196,9 +189,7 @@ norm_counts =
       unique())) %>% column_to_rownames(var = "rowname")
 
 #Plot the heatmap
-
-jpeg(file = here("output", "figures", "heatmap_unclustered.jpeg"),
-     res = 300, width = 1600, height = 1800)
+jpeg(file = here("output", "figures", "heatmap_unclustered.jpeg"))
 pheatmap(norm_counts, scale = "row",
          cluster_cols = F,
          main = "DE genes in any comparison (1382)", #Poner el titulo
@@ -210,91 +201,121 @@ pheatmap(norm_counts, scale = "row",
          annotation_colors = list(condition = c(WT = "#999999", Het = "#E69F00", GhKO = "#56B4E9")))
 dev.off() 
 
-## Plot the Venn diagram ----
-
-#Plot the Number of DE genes
-all_results %>% 
-  filter(padj < 0.05) %>% 
-  mutate(Change = case_when(log2FoldChange > 0 ~ "Overexpressed" ,
-                            log2FoldChange < 0 ~ "Underexpressed")) %>% 
-  ggplot(aes(x = comparison, fill = Change)) +
-  geom_bar()+
-  geom_text(stat = "count", aes(label = after_stat(count)), vjust = 0)+
-  theme_classic()+
-  ylab("Number of genes")+
-  ggtitle("DE genes per comparison")+
-  scale_x_discrete("") #Remove x axis title
-ggsave(
-  here("output", "figures","DE_genes_numbers.jpeg"),
-  width = 6, height = 4, dpi = 300
-)
-
-
-#Plot the Venn diagram
-venn_info <- list(
-  Het = all_results %>% 
-    filter(padj < 0.05,
-           comparison == "het_vs_wt") %>% 
-    pull(gene_id),
-  GhKO = all_results %>% 
-    filter(padj < 0.05,
-           comparison == "ghko_vs_wt") %>% 
-    pull(gene_id)
-)
-
-ggvenn(venn_info,stroke_size = 0.5)
-ggsave(
-  here("output", "figures", "Venn_Het_GhKO.jpeg"),
-  width = 8.5, height = 6.5, dpi = 300
-)
 
 
 ## Enrichment analysis ----
 universo = unique(all_results$gene_id)
-number_enriched_terms = tibble()
-for (contrast in names(comparisons)){
-  
-  subset_comp = all_results %>% 
-    filter(comparison ==contrast,
-           padj < 0.05)
-  
-  enrich_GO_res = enrichGO(gene = as.character(na.omit(subset_comp$gene_id)),
-                           keyType = "SYMBOL",
-                           OrgDb = 'org.Mm.eg.db',
-                           ont="BP", pvalueCutoff=0.05,qvalueCutoff = 0.5,
-                           universe = as.character(na.omit(universo)),
-                           readable = F)
-  
-  jpeg(file = here("output","figures",paste(contrast,"_GObp_dotplot.jpeg",sep = "")))
+
+for (fc_cutoff in c(0,.5,1)){ #do the analysis for each subontology
+  dir.create(here("output",
+                  "figures",
+                  str_glue("exploratory_FCcuts_",as.character(fc_cutoff)))
+             )
+  ## Plot the Venn diagram ----
+  #Plot the Number of DE genes
+  jpeg(file = here("output",
+                   "figures",
+                   str_glue("exploratory_FCcuts_",as.character(fc_cutoff)),
+                   str_glue("fc_",as.character(fc_cutoff),"_","DE_genes_numbers.jpeg")))
   print(
-    clusterProfiler::dotplot(enrich_GO_res, showCategory = 25, title = contrast )
-  ) 
+    all_results %>% 
+    filter(padj < 0.05,
+           abs(log2FoldChange) > fc_cutoff) %>% 
+    mutate(Change = case_when(log2FoldChange > 0 ~ "Overexpressed" ,
+                              log2FoldChange < 0 ~ "Underexpressed")) %>% 
+    ggplot(aes(x = comparison, fill = Change)) +
+    geom_bar()+
+    geom_text(stat = "count", aes(label = after_stat(count)), vjust = 0)+
+    theme_classic()+
+    ylab("Number of genes")+
+    ggtitle("DE genes per comparison")+
+    scale_x_discrete("")
+    ) #Remove x axis title
+  dev.off()  
+  
+  
+  #Plot the Venn diagram
+  venn_info <- list(
+    Het = all_results %>% 
+      filter(padj < 0.05,
+             abs(log2FoldChange) > fc_cutoff,
+             comparison == "het_vs_wt") %>% 
+      pull(gene_id),
+    GhKO = all_results %>% 
+      filter(padj < 0.05,
+             abs(log2FoldChange) > fc_cutoff,
+             comparison == "ghko_vs_wt") %>% 
+      pull(gene_id)
+  )
+  
+  jpeg(file =  here("output",
+                    "figures",
+                    str_glue("exploratory_FCcuts_",as.character(fc_cutoff)),
+                    str_glue("fc_",as.character(fc_cutoff),"_","Venn_Het_GhKO.jpeg")))
+  print(ggvenn(venn_info,stroke_size = 0.5))
   dev.off()
-  
-  enriched_terms = enrich_GO_res@result %>% 
-    filter(p.adjust < 0.05) %>% 
-    nrow()
-  
-  number_enriched_terms = c(number_enriched_terms, enriched_terms )
+  #
+  for (subontology in c("BP","MF","CC")){ #Try an enrichment analysis for each  subontology
+    number_enriched_terms = c()
+    for (contrast in names(comparisons)){ #Do it for each comparison
+      
+      subset_comp = all_results %>% 
+        filter(#comparison ==contrast,
+               padj < 0.05,
+               abs(log2FoldChange) > fc_cutoff)
+      
+      enrich_GO_res = enrichGO(gene = as.character(na.omit(subset_comp$gene_id)),
+                               keyType = "SYMBOL",
+                               OrgDb = 'org.Mm.eg.db',
+                               ont=subontology, pvalueCutoff=0.05,qvalueCutoff = 0.5,
+                               universe = as.character(na.omit(universo)),
+                               readable = F)
+      
+      
+      #Append the number of enriched terms to the object to plot later on the number per comparison in a barplot
+      enriched_terms = enrich_GO_res@result %>% 
+        filter(p.adjust < 0.05) %>% 
+        nrow()
+      number_enriched_terms = c(number_enriched_terms, enriched_terms )
+      
+      #Plot the enriched terms if there is any
+      if (enriched_terms > 0){
+        jpeg(file = here("output",
+                         "figures",
+                         str_glue("exploratory_FCcuts_",as.character(fc_cutoff)),
+                         str_glue(contrast,"_fc_",as.character(fc_cutoff),"_",subontology,"_dotplot.jpeg",sep = "")))
+        print(clusterProfiler::dotplot(enrich_GO_res, showCategory = 25, title = contrast ))
+        dev.off()
+        
+      }
+      
+    }
+    
+    jpeg(file = here("output",
+                     "figures",
+                     str_glue("exploratory_FCcuts_",as.character(fc_cutoff)),
+                     str_glue(contrast,"_",subontology,"_fc_",as.character(fc_cutoff),"_","Number_enriched_terms.jpeg")))
+    
+    print(number_enriched_terms %>% 
+      as_tibble() %>% 
+      rename(enriched_terms = value) %>% 
+      mutate(contrast = names(comparisons)) %>% 
+      ggplot(aes(x = contrast, y = enriched_terms))+
+      geom_col(aes(fill = contrast), alpha = 0.5)+
+      theme_classic()+
+      ylab("Enriched terms")+
+      guides(fill = "none") +
+      scale_x_discrete(""))
+    dev.off()
+  }
 }
 
-jpeg(file = here("output", "figures", "Number_enriched_terms.jpeg"))
-number_enriched_terms %>% 
-  as.tibble() %>% 
-  rename(enriched_terms = value) %>% 
-  mutate(contrast = names(comparisons)) %>% 
-  ggplot(aes(x = contrast, y = enriched_terms))+
-  geom_col(aes(fill = contrast), alpha = 0.5)+
-  theme_classic()+
-  ylab("Enriched terms")+
-  guides(fill = "none") +
-  scale_x_discrete("")
-dev.off()  
+  
 
 ## Het + GhKO vs WT ----
 dds_genotype <- DESeqDataSetFromMatrix(countData = counts_data,
-                                       colData = metadata,
-                                       design = ~ genotype) %>% 
+                              colData = metadata,
+                              design = ~ genotype) %>% 
   DESeq(betaPrior = TRUE)
 
 res_genotype = results(dds_genotype, tidy = TRUE) %>% 
@@ -384,11 +405,11 @@ dev.off()
 universo_genotype = unique(res_genotype$gene_id)
 
 enrich_GO_res_genotype = enrichGO(gene = as.character(na.omit(res_gen_signif$gene_id)),
-                                  keyType = "SYMBOL",
-                                  OrgDb = 'org.Mm.eg.db',
-                                  ont="BP", pvalueCutoff=0.05,qvalueCutoff = 0.5,
-                                  universe = as.character(na.omit(universo_genotype)),
-                                  readable = F)
+                         keyType = "SYMBOL",
+                         OrgDb = 'org.Mm.eg.db',
+                         ont="BP", pvalueCutoff=0.05,qvalueCutoff = 0.5,
+                         universe = as.character(na.omit(universo_genotype)),
+                         readable = F)
 
 jpeg(file = here("output","figures","mixed_genotypes_GOenrich.jpeg"))
 clusterProfiler::dotplot(enrich_GO_res, showCategory = 25, title = contrast ) 
@@ -452,7 +473,7 @@ for (contrast in names(comparisons)) {
     str_glue("{outdir}/{contrast}_gsea_dotplot_top{n_sets}_gene_ratio.jpeg"),
     .p, width = 9, height = 9
   )
-
+  
   .p <- plot_gsea(gsea_result_arranged, N = n_sets)
   ggsave(
     str_glue("{outdir}/{contrast}_gsea_dotplot_top{n_sets}_enrich_score.jpeg"),
@@ -489,7 +510,6 @@ for (contrast in names(comparisons)) {
     )
   }
 }
-
 
 
 
