@@ -273,9 +273,13 @@ for (fc_cutoff in c(0,.5,1)){ #do the analysis for each subontology
       
       
       #Append the number of enriched terms to the object to plot later on the number per comparison in a barplot
-      enriched_terms = enrich_GO_res@result %>% 
+      if (!is.null(enrich_GO_res)){
+        enriched_terms = enrich_GO_res@result %>% 
         filter(p.adjust < 0.05) %>% 
-        nrow()
+        nrow()} else{
+          enriched_terms = 0
+        }
+        
       number_enriched_terms = c(number_enriched_terms, enriched_terms )
       
       #Plot the enriched terms if there is any
