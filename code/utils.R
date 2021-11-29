@@ -44,7 +44,7 @@ plot_gsea <- function(df, N = 25) {
       x = map_dbl(core_enrichment, ~ {
         str_split(.x, fixed("/")) %>% 
           (
-            \(k) length(k[[1]])
+            function(k) length(k[[1]])
           )
       }),
       .gene_ratio = x/setSize
