@@ -260,7 +260,7 @@ for (fc_cutoff in c(0,.5,1)){ #do the analysis for each subontology
     for (contrast in names(comparisons)){ #Do it for each comparison
       
       subset_comp = all_results %>% 
-        filter(#comparison ==contrast,
+        filter(comparison ==contrast,
                padj < 0.05,
                abs(log2FoldChange) > fc_cutoff)
       
@@ -294,7 +294,7 @@ for (fc_cutoff in c(0,.5,1)){ #do the analysis for each subontology
     jpeg(file = here("output",
                      "figures",
                      str_glue("exploratory_FCcuts_",as.character(fc_cutoff)),
-                     str_glue(contrast,"_",subontology,"_fc_",as.character(fc_cutoff),"_","Number_enriched_terms.jpeg")))
+                     str_glue(subontology,"_fc_",as.character(fc_cutoff),"_","Number_enriched_terms.jpeg")))
     
     print(number_enriched_terms %>% 
       as_tibble() %>% 
