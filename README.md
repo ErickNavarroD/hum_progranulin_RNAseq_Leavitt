@@ -34,6 +34,6 @@ the Benjamini-Hochberg procedure to control False-discovery Rates at 5% (Benjami
 
 * Benjamini, Y., & Hochberg, Y. (1995). Controlling the False Discovery Rate: A Practical and Powerful Approach to Multiple Testing. In Journal of the Royal Statistical Society: Series B (Methodological) (Vol. 57, Issue 1, pp. 289–300). Wiley. https://doi.org/10.1111/j.2517-6161.1995.tb02031.x
 
-* Wu T, Hu E, Xu S, Chen M, Guo P, Dai Z, Feng T, Zhou L, Tang W, Zhan L, Fu x, Liu S, Bo X, Yu G. (2021). “clusterProfiler 4.0: A universal enrichment tool for interpreting omics data.” The Innovation, 2(3), 100141. doi: 10.1016/j.xinn.2021.100141.
+* Wu T, Hu E, Xu S, Chen M, Guo P, Dai Z, Feng T, Zhou L, Tang W, Zhan L, Fu x, Liu S, Bo X, Yu G. (2021). “clusterProfiler 4.0: A universal enrichment tool for interpreting omics data.” The Innovation, 2(3), 100141. https://doi.org/10.1016/j.xinn.2021.100141
 
 * Wickham, H., Averick, M., Bryan, J., Chang, W., McGowan, L., François, R., Grolemund, G., Hayes, A., Henry, L., Hester, J., Kuhn, M., Pedersen, T., Miller, E., Bache, S., Müller, K., Ooms, J., Robinson, D., Seidel, D., Spinu, V., … Yutani, H. (2019). Welcome to the Tidyverse. In Journal of Open Source Software (Vol. 4, Issue 43, p. 1686). The Open Journal. https://doi.org/10.21105/joss.01686
