@@ -177,6 +177,15 @@ dev.off()
 
 ## Heatmaps ----
 
+
+## Differentially expressed genes ----
+
+heatmap_columns_ordered <- c(
+  paste0("WT", 1:5),
+  paste0("Het", 1:4),
+  paste0("GhKO", 1:4)
+)
+
 #Get normalized counts that will be used to plot the heatmap
 norm_counts =
   vsd %>% 
@@ -186,10 +195,12 @@ norm_counts =
     all_results %>% 
       filter(padj < 0.05) %>% 
       pull(gene_id) %>% 
-      unique())) %>% column_to_rownames(var = "rowname")
+      unique())) %>% column_to_rownames(var = "rowname") %>% 
+  dplyr::select(heatmap_columns_ordered)
 
 #Plot the heatmap
-jpeg(file = here("output", "figures", "heatmap_unclustered.jpeg"))
+jpeg(file = here("output", "figures", "heatmap_unclustered.jpeg"),
+     res = 300, width = 1600, height = 1600)
 pheatmap(norm_counts, scale = "row",
          cluster_cols = F,
          main = "DE genes in any comparison (1382)", #Poner el titulo
@@ -201,7 +212,28 @@ pheatmap(norm_counts, scale = "row",
          annotation_colors = list(condition = c(WT = "#999999", Het = "#E69F00", GhKO = "#56B4E9")))
 dev.off() 
 
+## Selected genes ----
+genes_of_interest <- c( 
+  "Apoa1", "Apoa2", "Apoa5", "Apob", "Apoc1", "Apoc3", 
+  "Aloxe3", "Osbpl5", "Cyp2d9", "Serpina1b", "Serpina1c", "Serpina1d"
+)
+norm_counts_selected = norm_counts[genes_of_interest, ]
 
+
+#Plot the heatmap
+jpeg(file = here("output", "figures", "heatmap_selected_genes.jpeg"),
+     res = 300, width = 1600, height = 1600)
+pheatmap(norm_counts_selected,
+         scale = "row",
+         cluster_cols = F,
+         main = "Selected DE genes", 
+         show_rownames = T,
+         show_colnames = T, 
+         treeheight_col = 20,
+         treeheight_row = 0, #Remove row dendogram
+         annotation_col = metadata %>% select(condition),
+         annotation_colors = list(condition = c(WT = "#999999", Het = "#E69F00", GhKO = "#56B4E9")))
+dev.off() 
 
 ## Enrichment analysis ----
 universo = unique(all_results$gene_id)
