@@ -18,8 +18,8 @@ Full analysis pipeline is in `analysis.R` file.
 
 ## Methods
 
-All statistical analyses were carried out using R (v. 4.1.2) (R Core Team, 2021). Expressions counts
-were retrieved directly from BaseSpace application (Illumina, 2021). Expression profiles of each
+All statistical analyses were carried out using R (v. 4.1.2) (R Core Team, 2021). Expression counts
+were retrieved directly from BaseSpace application (Illumina, 2021). Distributions of read counts from each
 sample were visually inspected before and after normalization to detect any sample with
 uncommon overall expression profile. We performed differential expression (DE) analysis
 using the DESeq2 R package (v. 1.34.0) (Love et al., 2014). P-values were adjusted using 
