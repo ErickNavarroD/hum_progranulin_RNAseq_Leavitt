@@ -346,7 +346,79 @@ for (fc_cutoff in c(0,.5,1)){ #do the analysis for each subontology
   }
 }
 
+# Enrichment of the 302 common dysregulated genes in the het vs wt and ghko vs wt comparisons    
+
+venn_info <- list(
+  Het = all_results %>% 
+    filter(padj < 0.05,
+           abs(log2FoldChange) > 0,
+           comparison == "het_vs_wt") %>% 
+    pull(gene_id),
+  GhKO = all_results %>% 
+    filter(padj < 0.05,
+           abs(log2FoldChange) > 0,
+           comparison == "ghko_vs_wt") %>% 
+    pull(gene_id)
+)
+
+comm_dys_genes = intersect(venn_info$Het , venn_info$GhKO)
+
+dir.create(here("output",
+                "figures",
+                "comm_dys_genes")
+)
+
+for (subontology in c("BP","MF","CC")){ #Try an enrichment analysis for each  subontology
+  number_enriched_terms = c()
   
+  enrich_GO_res = enrichGO(gene = comm_dys_genes,
+                           keyType = "SYMBOL",
+                           OrgDb = 'org.Mm.eg.db',
+                           ont=subontology, pvalueCutoff=0.05,qvalueCutoff = 0.5,
+                           universe = as.character(na.omit(universo)),
+                           readable = F)
+  
+   #Append the number of enriched terms to the object to plot later on the number per comparison in a barplot
+  if (!is.null(enrich_GO_res)){
+    enriched_terms = enrich_GO_res@result %>% 
+      filter(p.adjust < 0.05) %>% 
+      nrow()} else{
+        enriched_terms = 0
+      }
+  
+  number_enriched_terms = c(number_enriched_terms, enriched_terms )
+  
+    #Plot the enriched terms if there is any
+  if (enriched_terms > 0){
+    jpeg(file = here("output",
+                     "figures",
+                     "comm_dys_genes",
+                     str_glue(subontology,"_dotplot.jpeg",sep = "")))
+    print(clusterProfiler::dotplot(enrich_GO_res, showCategory = 25, title = contrast ))
+    dev.off()
+      
+  }
+    
+}
+  
+jpeg(file = here("output",
+                 "figures",
+                 "comm_dys_genes",
+                 str_glue("Number_enriched_terms.jpeg")))
+  
+print(number_enriched_terms %>% 
+        as_tibble() %>% 
+        rename(enriched_terms = value) %>% 
+        mutate(contrast = names(comparisons)) %>% 
+        ggplot(aes(x = contrast, y = enriched_terms))+
+        geom_col(aes(fill = contrast), alpha = 0.5)+
+        theme_classic()+
+        ylab("Enriched terms")+
+        guides(fill = "none") +
+        scale_x_discrete(""))
+dev.off()
+
+
 
 ## Het + GhKO vs WT ----
 dds_genotype <- DESeqDataSetFromMatrix(countData = counts_data,
