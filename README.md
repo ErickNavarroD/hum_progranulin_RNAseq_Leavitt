@@ -23,7 +23,7 @@ were retrieved directly from BaseSpace application (Illumina, 2021). Distributio
 sample were visually inspected before and after normalization to detect any sample with
 uncommon overall expression profile. We performed differential expression (DE) analysis
 using the DESeq2 R package (v. 1.34.0) (Love et al., 2014). P-values were adjusted using 
-the Benjamini-Hochberg procedure to control False-discovery Rates at 5% (Benjamini & Hochberg, 1995). Gene set and enrichment analyses were carried out using the clusterProfiler R package (v. 4.2.2) (Wu et al., 2021). We used the tidyverse R package suit (v. 1.3.1) (Wickham et al., 2019) for general data wrangling and visualization.
+the Benjamini-Hochberg procedure to control False-discovery Rates at 5% (Benjamini & Hochberg, 1995). Gene ontology enrichment analyses were carried out using the clusterProfiler R package (v. 3.18.1) (Wu et al., 2021). We used the tidyverse R package suit (v. 1.3.1) (Wickham et al., 2019) for general data wrangling and visualization.
 
 
 ## References
