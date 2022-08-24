@@ -636,7 +636,7 @@ stopifnot(
 )
 
 all_results$direction <- ifelse(all_results$log2FoldChange > 0, "Up", "Down") 
-all_results$comparison <- factor(
+all_results$comparison_label <- factor(
   as.character(all_results$comparison),
   levels = c('het_vs_wt', 'ghko_vs_wt', 'ghko_vs_het'),
   labels = c(
@@ -646,11 +646,12 @@ all_results$comparison <- factor(
   )
 )
 
+cluster_comp_res <- list()
 for (subontology in c("MF", "BP", "CC", "ALL")) {
   print(str_glue("Running enrichGO for subontology {subontology}"))  
-  cluster_comp_mf = compareCluster(
+  cluster_comp = compareCluster(
     data = all_results %>% dplyr::filter(padj < .05),
-    geneClusters = gene_id ~ direction + comparison, 
+    geneClusters = gene_id ~ direction + comparison_label, 
     fun = "enrichGO", 
     keyType = "SYMBOL",
     OrgDb = 'org.Mm.eg.db', 
@@ -659,13 +660,13 @@ for (subontology in c("MF", "BP", "CC", "ALL")) {
   )
   
   .plot <- dotplot(
-    cluster_comp_mf,
+    cluster_comp,
     x = 'direction',
     showCategory = 5, 
     font.size = 9
   ) + 
     facet_wrap(
-      ~comparison, 
+      ~ comparison_label, 
       labeller = label_parsed
     ) +
     theme_bw(base_size = 18) +
@@ -679,6 +680,11 @@ for (subontology in c("MF", "BP", "CC", "ALL")) {
       range = c(5, 12)
     )
   
+  cluster_comp_res[[subontology]] <- list(
+    result = cluster_comp,
+    .plot = .plot
+  )
+  
   subontology <- str_to_lower(subontology)
   file_name <- str_glue(
     "output/stratified-go-analysis/stratified-go-enrichment-{subontology}.png"
@@ -689,3 +695,69 @@ for (subontology in c("MF", "BP", "CC", "ALL")) {
     width = 16, height = 12
   )
 }
+
+# Check for cell-specific DE genes ----
+
+has_microgial_terms <- function(x) {
+  any(
+    str_detect(
+      str_to_lower(x),
+      'microglia'
+    )
+  )
+}
+
+has_microgial_terms(
+  cluster_comp_res$MF$result@compareClusterResult$Description
+)
+has_microgial_terms(
+  cluster_comp_res$BP$result@compareClusterResult$Description
+)
+has_microgial_terms(
+  cluster_comp_res$CC$result@compareClusterResult$Description
+)
+has_microgial_terms(
+  cluster_comp_res$ALL$result@compareClusterResult$Description
+)
+
+clust_comp_no_cutoff <- compareCluster(
+  data = all_results %>% dplyr::filter(padj < .05),
+  geneClusters = gene_id ~ direction + comparison_label, 
+  fun = "enrichGO", 
+  keyType = "SYMBOL",
+  OrgDb = 'org.Mm.eg.db', 
+  universe = unique(all_results$gene_id),
+  ont = "ALL",
+  pvalueCutoff = 1,
+  qvalueCutoff = 1
+)
+
+has_microgial_terms(
+  clust_comp_no_cutoff@compareClusterResult$Description
+)
+
+comp_labels <- unique(
+  clust_comp_no_cutoff@compareClusterResult$comparison_label
+)
+clust_comp_no_cutoff@compareClusterResult %>% 
+  dplyr::filter(
+    str_detect(
+      str_to_lower(Description),
+      'microglia'
+    )
+  ) %>% 
+  mutate(
+    comparison = case_when(
+      comparison_label == comp_labels[1] ~ "het_vs_wt",
+      comparison_label == comp_labels[2] ~ "ghko_vs_wt",
+      comparison_label == comp_labels[3] ~ "ghko_vs_het",
+    )
+  ) %>% 
+  dplyr::select(
+    comparison, direction, ONTOLOGY, ID, Description,
+    GeneRatio, BgRatio, pvalue, p.adjust, qvalue, 
+    geneID, Count
+  ) %>% 
+  write_tsv(
+    "output/stratified-go-analysis/microgial-cell-go-terms.tsv"
+  )
