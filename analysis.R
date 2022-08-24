@@ -759,5 +759,5 @@ clust_comp_no_cutoff@compareClusterResult %>%
     geneID, Count
   ) %>% 
   write_tsv(
-    "output/stratified-go-analysis/microgial-cell-go-terms.tsv"
+    "output/stratified-go-analysis/microglial-cell-go-terms.tsv"
   )
