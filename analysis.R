@@ -82,47 +82,56 @@ comparisons <- list(
 )
 
 #Create an object with the results for each comparison
-all_results <- imap_dfr(
-  comparisons, 
-  function(.comparison, .comparison_name) {
-    
-    res <- results(dds, contrast = .comparison, tidy = TRUE) %>% 
-      dplyr::rename(gene_id := row) %>% 
-      dplyr::filter(!is.na(padj)) %>% 
-      mutate(comparison = .comparison_name) %>% 
-      arrange(padj, -abs(log2FoldChange), -baseMean)
-    
-    
-    output_dir <- str_glue("output/diff_expression_tables/{.comparison_name}")
-    make_dir(output_dir)
-    
-    # write all results for this comparison 
-    # (except for genes with NA in padj column)
-    write_tsv(
-      res,
-      str_glue("{output_dir}/{.comparison_name}_all_genes.tsv")
-    )
-    
-    # write significant calls
-    write_tsv(
-      res %>% filter(padj < 0.05),
-      str_glue("{output_dir}/{.comparison_name}_significant_genes.tsv")
-    )
-    
-    # write top ~5% calls
-    # might be greater than 5% if there are ties in padj
-    write_tsv(
-      res %>% 
-        filter(padj < 0.05) %>% 
-        slice_min(padj, prop = .05),
-      str_glue("{output_dir}/{.comparison_name}_top5_genes.tsv")
-    )
-    
-    return(res)
-  }
-  
-)
+all_results_file <- here("output/diff_expression_tables/all_results.tsv")
+if (!file.exists(all_results_file)) {
+  all_results <- imap_dfr(
+    comparisons, 
+    function(.comparison, .comparison_name) {
+      
+      res <- results(dds, contrast = .comparison, tidy = TRUE) %>% 
+        dplyr::rename(gene_id := row) %>% 
+        dplyr::filter(!is.na(padj)) %>% 
+        mutate(comparison = .comparison_name) %>% 
+        arrange(padj, -abs(log2FoldChange), -baseMean)
+      
+      
+      output_dir <- str_glue("output/diff_expression_tables/{.comparison_name}")
+      make_dir(output_dir)
+      
+      # write all results for this comparison 
+      # (except for genes with NA in padj column)
+      write_tsv(
+        res,
+        str_glue("{output_dir}/{.comparison_name}_all_genes.tsv")
+      )
 
+      # write significant calls
+      write_tsv(
+        res %>% filter(padj < 0.05),
+        str_glue("{output_dir}/{.comparison_name}_significant_genes.tsv")
+      )
+
+      # write top ~5% calls
+      # might be greater than 5% if there are ties in padj
+      write_tsv(
+        res %>%
+          filter(padj < 0.05) %>%
+          slice_min(padj, prop = .05),
+        str_glue("{output_dir}/{.comparison_name}_top5_genes.tsv")
+      )
+      
+      return(res)
+    }
+    
+  )
+  
+  write_tsv(all_results, all_results_file)
+  
+} else {
+  
+  all_results <- read_tsv(all_results_file)
+  
+}
 # Plotting ----
 
 ## PCA
@@ -141,22 +150,22 @@ dev.off()
 for (contrast in names(comparisons)){
   jpeg(file = here("output","figures",paste(contrast,"_VolcPlot.jpeg",sep = "")))
   print(all_results %>% 
-    filter(comparison == contrast) %>% 
-    EnhancedVolcano(lab = .[,1],
-                    x = "log2FoldChange", 
-                    FCcutoff = 0, 
-                    y = "padj",
-                    title = contrast,
-                    subtitleLabSize = 0.1,
-                    legendLabels=c('NS', 
-                                   "log2FC",
-                                   'p adj',
-                                   "p adj & log2FC"))+
-    ylab(expression(-log[10]~p~adj))) 
-    dev.off()
+          filter(comparison == contrast) %>% 
+          EnhancedVolcano(lab = .[,1],
+                          x = "log2FoldChange", 
+                          FCcutoff = 0, 
+                          y = "padj",
+                          title = contrast,
+                          subtitleLabSize = 0.1,
+                          legendLabels=c('NS', 
+                                         "log2FC",
+                                         'p adj',
+                                         "p adj & log2FC"))+
+          ylab(expression(-log[10]~p~adj))) 
+  dev.off()
 }
 
-  
+
 
 
 ## look at the expression of the Grn gene ----
@@ -242,7 +251,7 @@ for (fc_cutoff in c(0,.5,1)){ #do the analysis for each subontology
   dir.create(here("output",
                   "figures",
                   str_glue("exploratory_FCcuts_",as.character(fc_cutoff)))
-             )
+  )
   ## Plot the Venn diagram ----
   #Plot the Number of DE genes
   jpeg(file = here("output",
@@ -251,18 +260,18 @@ for (fc_cutoff in c(0,.5,1)){ #do the analysis for each subontology
                    str_glue("fc_",as.character(fc_cutoff),"_","DE_genes_numbers.jpeg")))
   print(
     all_results %>% 
-    filter(padj < 0.05,
-           abs(log2FoldChange) > fc_cutoff) %>% 
-    mutate(Change = case_when(log2FoldChange > 0 ~ "Overexpressed" ,
-                              log2FoldChange < 0 ~ "Underexpressed")) %>% 
-    ggplot(aes(x = comparison, fill = Change)) +
-    geom_bar()+
-    geom_text(stat = "count", aes(label = after_stat(count)), vjust = 0)+
-    theme_classic()+
-    ylab("Number of genes")+
-    ggtitle("DE genes per comparison")+
-    scale_x_discrete("")
-    ) #Remove x axis title
+      filter(padj < 0.05,
+             abs(log2FoldChange) > fc_cutoff) %>% 
+      mutate(Change = case_when(log2FoldChange > 0 ~ "Overexpressed" ,
+                                log2FoldChange < 0 ~ "Underexpressed")) %>% 
+      ggplot(aes(x = comparison, fill = Change)) +
+      geom_bar()+
+      geom_text(stat = "count", aes(label = after_stat(count)), vjust = 0)+
+      theme_classic()+
+      ylab("Number of genes")+
+      ggtitle("DE genes per comparison")+
+      scale_x_discrete("")
+  ) #Remove x axis title
   dev.off()  
   
   
@@ -307,11 +316,11 @@ for (fc_cutoff in c(0,.5,1)){ #do the analysis for each subontology
       #Append the number of enriched terms to the object to plot later on the number per comparison in a barplot
       if (!is.null(enrich_GO_res)){
         enriched_terms = enrich_GO_res@result %>% 
-        filter(p.adjust < 0.05) %>% 
-        nrow()} else{
-          enriched_terms = 0
-        }
-        
+          filter(p.adjust < 0.05) %>% 
+          nrow()} else{
+            enriched_terms = 0
+          }
+      
       number_enriched_terms = c(number_enriched_terms, enriched_terms )
       
       #Plot the enriched terms if there is any
@@ -333,15 +342,15 @@ for (fc_cutoff in c(0,.5,1)){ #do the analysis for each subontology
                      str_glue(subontology,"_fc_",as.character(fc_cutoff),"_","Number_enriched_terms.jpeg")))
     
     print(number_enriched_terms %>% 
-      as_tibble() %>% 
-      rename(enriched_terms = value) %>% 
-      mutate(contrast = names(comparisons)) %>% 
-      ggplot(aes(x = contrast, y = enriched_terms))+
-      geom_col(aes(fill = contrast), alpha = 0.5)+
-      theme_classic()+
-      ylab("Enriched terms")+
-      guides(fill = "none") +
-      scale_x_discrete(""))
+            as_tibble() %>% 
+            rename(enriched_terms = value) %>% 
+            mutate(contrast = names(comparisons)) %>% 
+            ggplot(aes(x = contrast, y = enriched_terms))+
+            geom_col(aes(fill = contrast), alpha = 0.5)+
+            theme_classic()+
+            ylab("Enriched terms")+
+            guides(fill = "none") +
+            scale_x_discrete(""))
     dev.off()
   }
 }
@@ -378,7 +387,7 @@ for (subontology in c("BP","MF","CC")){ #Try an enrichment analysis for each  su
                            universe = as.character(na.omit(universo)),
                            readable = F)
   
-   #Append the number of enriched terms to the object to plot later on the number per comparison in a barplot
+  #Append the number of enriched terms to the object to plot later on the number per comparison in a barplot
   if (!is.null(enrich_GO_res)){
     enriched_terms = enrich_GO_res@result %>% 
       filter(p.adjust < 0.05) %>% 
@@ -388,7 +397,7 @@ for (subontology in c("BP","MF","CC")){ #Try an enrichment analysis for each  su
   
   number_enriched_terms = c(number_enriched_terms, enriched_terms )
   
-    #Plot the enriched terms if there is any
+  #Plot the enriched terms if there is any
   if (enriched_terms > 0){
     jpeg(file = here("output",
                      "figures",
@@ -396,16 +405,16 @@ for (subontology in c("BP","MF","CC")){ #Try an enrichment analysis for each  su
                      str_glue(subontology,"_dotplot.jpeg",sep = "")))
     print(clusterProfiler::dotplot(enrich_GO_res, showCategory = 25, title = contrast ))
     dev.off()
-      
-  }
     
-}
+  }
   
+}
+
 jpeg(file = here("output",
                  "figures",
                  "comm_dys_genes",
                  str_glue("Number_enriched_terms.jpeg")))
-  
+
 print(number_enriched_terms %>% 
         as_tibble() %>% 
         rename(enriched_terms = value) %>% 
@@ -422,8 +431,8 @@ dev.off()
 
 ## Het + GhKO vs WT ----
 dds_genotype <- DESeqDataSetFromMatrix(countData = counts_data,
-                              colData = metadata,
-                              design = ~ genotype) %>% 
+                                       colData = metadata,
+                                       design = ~ genotype) %>% 
   DESeq(betaPrior = TRUE)
 
 res_genotype = results(dds_genotype, tidy = TRUE) %>% 
@@ -513,11 +522,11 @@ dev.off()
 universo_genotype = unique(res_genotype$gene_id)
 
 enrich_GO_res_genotype = enrichGO(gene = as.character(na.omit(res_gen_signif$gene_id)),
-                         keyType = "SYMBOL",
-                         OrgDb = 'org.Mm.eg.db',
-                         ont="BP", pvalueCutoff=0.05,qvalueCutoff = 0.5,
-                         universe = as.character(na.omit(universo_genotype)),
-                         readable = F)
+                                  keyType = "SYMBOL",
+                                  OrgDb = 'org.Mm.eg.db',
+                                  ont="BP", pvalueCutoff=0.05,qvalueCutoff = 0.5,
+                                  universe = as.character(na.omit(universo_genotype)),
+                                  readable = F)
 
 jpeg(file = here("output","figures","mixed_genotypes_GOenrich.jpeg"))
 clusterProfiler::dotplot(enrich_GO_res, showCategory = 25, title = contrast ) 
@@ -620,6 +629,135 @@ for (contrast in names(comparisons)) {
 }
 
 
+# Cluster comparisons ----
 
+stopifnot(
+  all(!near(all_results$log2FoldChange, 0))
+)
 
+all_results$direction <- ifelse(all_results$log2FoldChange > 0, "Up", "Down") 
+all_results$comparison_label <- factor(
+  as.character(all_results$comparison),
+  levels = c('het_vs_wt', 'ghko_vs_wt', 'ghko_vs_het'),
+  labels = c(
+    latex2exp::TeX("$Grn^{+/-}\\ vs\\ Grn^{+/+}$"),
+    latex2exp::TeX("$Grn^{-/-};GRN^{Tg}\\ vs \\ Grn^{+/+}$"),
+    latex2exp::TeX("$Grn^{-/-};GRN^{Tg}\\ vs \\ Grn^{+/-}$")
+  )
+)
 
+cluster_comp_res <- list()
+for (subontology in c("MF", "BP", "CC", "ALL")) {
+  print(str_glue("Running enrichGO for subontology {subontology}"))  
+  cluster_comp = compareCluster(
+    data = all_results %>% dplyr::filter(padj < .05),
+    geneClusters = gene_id ~ direction + comparison_label, 
+    fun = "enrichGO", 
+    keyType = "SYMBOL",
+    OrgDb = 'org.Mm.eg.db', 
+    universe = unique(all_results$gene_id),
+    ont = subontology
+  )
+  
+  .plot <- dotplot(
+    cluster_comp,
+    x = 'direction',
+    showCategory = 5, 
+    font.size = 9
+  ) + 
+    facet_wrap(
+      ~ comparison_label, 
+      labeller = label_parsed
+    ) +
+    theme_bw(base_size = 18) +
+    theme(legend.position = 'bottom',
+          legend.key.width = unit(1, 'cm'),
+          axis.text.y = element_text(size = 14)) +
+    scale_y_discrete(
+      labels = label_wrap_gen(width = 60)
+    ) +
+    scale_size_continuous(
+      range = c(5, 12)
+    )
+  
+  cluster_comp_res[[subontology]] <- list(
+    result = cluster_comp,
+    .plot = .plot
+  )
+  
+  subontology <- str_to_lower(subontology)
+  file_name <- str_glue(
+    "output/stratified-go-analysis/stratified-go-enrichment-{subontology}.png"
+  )
+  ggsave(
+    filename = file_name,
+    plot = .plot,
+    width = 16, height = 12
+  )
+}
+
+# Check for cell-specific DE genes ----
+
+has_microgial_terms <- function(x) {
+  any(
+    str_detect(
+      str_to_lower(x),
+      'microglia'
+    )
+  )
+}
+
+has_microgial_terms(
+  cluster_comp_res$MF$result@compareClusterResult$Description
+)
+has_microgial_terms(
+  cluster_comp_res$BP$result@compareClusterResult$Description
+)
+has_microgial_terms(
+  cluster_comp_res$CC$result@compareClusterResult$Description
+)
+has_microgial_terms(
+  cluster_comp_res$ALL$result@compareClusterResult$Description
+)
+
+clust_comp_no_cutoff <- compareCluster(
+  data = all_results %>% dplyr::filter(padj < .05),
+  geneClusters = gene_id ~ direction + comparison_label, 
+  fun = "enrichGO", 
+  keyType = "SYMBOL",
+  OrgDb = 'org.Mm.eg.db', 
+  universe = unique(all_results$gene_id),
+  ont = "ALL",
+  pvalueCutoff = 1,
+  qvalueCutoff = 1
+)
+
+has_microgial_terms(
+  clust_comp_no_cutoff@compareClusterResult$Description
+)
+
+comp_labels <- unique(
+  clust_comp_no_cutoff@compareClusterResult$comparison_label
+)
+clust_comp_no_cutoff@compareClusterResult %>% 
+  dplyr::filter(
+    str_detect(
+      str_to_lower(Description),
+      'microglia'
+    )
+  ) %>% 
+  mutate(
+    comparison = case_when(
+      comparison_label == comp_labels[1] ~ "het_vs_wt",
+      comparison_label == comp_labels[2] ~ "ghko_vs_wt",
+      comparison_label == comp_labels[3] ~ "ghko_vs_het",
+    )
+  ) %>% 
+  dplyr::select(
+    comparison, direction, ONTOLOGY, ID, Description,
+    GeneRatio, BgRatio, pvalue, p.adjust, qvalue, 
+    geneID, Count
+  ) %>% 
+  write_tsv(
+    "output/stratified-go-analysis/microglial-cell-go-terms.tsv"
+  )
