@@ -635,7 +635,7 @@ stopifnot(
   all(!near(all_results$log2FoldChange, 0))
 )
 
-all_results$direction <- ifelse(all_results$log2FoldChange > 0, "Up", "Down") 
+all_results$direction <- ifelse(all_results$log2FoldChange > 0, "Upregulated", "Downregulated") 
 all_results$comparison_label <- factor(
   as.character(all_results$comparison),
   levels = c('het_vs_wt', 'ghko_vs_wt', 'ghko_vs_het'),
@@ -647,7 +647,7 @@ all_results$comparison_label <- factor(
 )
 
 cluster_comp_res <- list()
-for (subontology in c("MF", "BP", "CC", "ALL")) {
+for (subontology in c("MF", "BP", "CC")) {
   print(str_glue("Running enrichGO for subontology {subontology}"))  
   cluster_comp = compareCluster(
     data = all_results %>% dplyr::filter(padj < .05),
@@ -666,10 +666,10 @@ for (subontology in c("MF", "BP", "CC", "ALL")) {
     font.size = 9
   ) + 
     facet_wrap(
-      ~ comparison_label, 
+      ~ fct_rev(comparison_label), 
       labeller = label_parsed
     ) +
-    theme_bw(base_size = 18) +
+    theme_bw(base_size = 20) +
     theme(legend.position = 'bottom',
           legend.key.width = unit(1, 'cm'),
           axis.text.y = element_text(size = 14)) +
@@ -678,7 +678,8 @@ for (subontology in c("MF", "BP", "CC", "ALL")) {
     ) +
     scale_size_continuous(
       range = c(5, 12)
-    )
+    ) +
+    labs(x = NULL)
   
   cluster_comp_res[[subontology]] <- list(
     result = cluster_comp,
@@ -692,7 +693,7 @@ for (subontology in c("MF", "BP", "CC", "ALL")) {
   ggsave(
     filename = file_name,
     plot = .plot,
-    width = 16, height = 12
+    width = 18, height = 12
   )
 }
 
@@ -715,9 +716,6 @@ has_microgial_terms(
 )
 has_microgial_terms(
   cluster_comp_res$CC$result@compareClusterResult$Description
-)
-has_microgial_terms(
-  cluster_comp_res$ALL$result@compareClusterResult$Description
 )
 
 clust_comp_no_cutoff <- compareCluster(
